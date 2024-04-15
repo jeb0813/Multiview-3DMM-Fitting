@@ -1,0 +1,14 @@
+image_folder: '/data/chenziang/codes/Gaussian-Head-Avatar/Mead/M003/neutral/images'
+camera_folder: '/data/chenziang/codes/Gaussian-Head-Avatar/Mead/M003/neutral/cameras'
+landmark_folder: '/data/chenziang/codes/Gaussian-Head-Avatar/Mead/M003/neutral/landmarks'
+param_folder: '/data/chenziang/codes/Gaussian-Head-Avatar/Mead/M003/neutral/params'
+gpu_id: 0
+camera_ids: ['1', '2', '3', '4', '5', '6', '7']
+image_size: 2048
+face_model: 'BFM'
+reg_id_weight: 1e-7
+reg_exp_weight: 1e-7
+# save_vertices: False
+save_vertices: True
+# visualize: True
+visualize: False

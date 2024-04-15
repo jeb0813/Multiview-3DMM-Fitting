@@ -9,6 +9,9 @@ from lib.Fitter import Fitter
 from lib.face_models import get_face_model
 from lib.Camera import Camera
 
+import os
+os.environ['PYGLET_WINDOW'] = 'dummy'
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -28,4 +31,5 @@ if __name__ == '__main__':
     recorder = Recorder(save_folder=cfg.param_folder, camera=camera, visualize=cfg.visualize, save_vertices=cfg.save_vertices)
 
     fitter = Fitter(cfg, dataset, face_model, camera, recorder, device)
+
     fitter.run()

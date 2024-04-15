@@ -13,7 +13,8 @@ class BFMModule(nn.Module):
         self.exp_dims = 64
         self.batch_size = batch_size
 
-        model_dict = loadmat('assets/BFM/BFM09_model_info.mat')
+        model_dict = loadmat('../assets/BFM/BFM09_model_info.mat')
+        # model_dict = loadmat('assets/BFM/BFM09_model_info.mat')
         self.register_buffer('skinmask', torch.tensor(model_dict['skinmask']))
         kp_inds = torch.tensor(model_dict['keypoints']-1).squeeze().long()
         kp_inds = torch.cat([kp_inds[0:48], kp_inds[49:54], kp_inds[55:68]])
