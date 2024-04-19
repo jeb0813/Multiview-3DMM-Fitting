@@ -5,7 +5,7 @@ import argparse
 from config.config import config
 from lib.LandmarkDataset import LandmarkDataset, LandmarkDatasetGA
 from lib.Recorder import Recorder
-from lib.Fitter import Fitter, MyFitter
+from lib.Fitter import Fitter, MyFitter, MyFitter_GA
 from lib.face_models import get_face_model
 from lib.Camera import Camera, CameraGA
 
@@ -43,7 +43,7 @@ if __name__ == '__main__':
         param_folder = os.path.join(cfg.root_folder, trial, cfg.param_suffix)
         recorder = Recorder(save_folder=param_folder, camera=camera, visualize=cfg.visualize, save_vertices=cfg.save_vertices)
 
-        fitter = MyFitter(cfg, dataset, face_model, camera, recorder, device)
+        fitter = MyFitter_GA(cfg, dataset, face_model, camera, recorder, device)
         # ipdb.set_trace()
         fitter.run()
 

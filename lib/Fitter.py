@@ -173,7 +173,7 @@ class MyFitter(Fitter):
         progress_bar.close()
 
         import ipdb
-        ipdb.set_trace()
+        # ipdb.set_trace()
         log = {
             'frames': frames[::len(self.cfg.camera_ids)],
             'landmarks_gt': landmarks_gt,
@@ -191,3 +191,21 @@ class MyFitter(Fitter):
         points_2d = self.camera.project(points_3d, calibrations)
         points_2d = points_2d.permute(0,2,1)
         return points_2d
+
+
+
+class MyFitter_GA(MyFitter):
+    def __init__(self, cfg, dataset, face_model, camera, recorder, device):
+        self.cfg = cfg
+        self.dataset = dataset
+        self.face_model = face_model
+        self.camera = camera
+        self.recorder = recorder
+        self.device = device
+
+        self.optimizers = [torch.optim.Adam([{'params' : self.face_model.pose, 'lr' : 1e-2}]),
+                           torch.optim.Adam([{'params' : self.face_model.parameters(), 'lr' : 1e-3}])]
+    
+
+
+

@@ -214,6 +214,110 @@ def lbs(
 
     return verts, J_transformed
 
+def lbs_ga(
+    betas: Tensor,
+    pose: Tensor,
+    v_template: Tensor,
+    faces: Tensor,
+    shapedirs: Tensor,
+    posedirs: Tensor,
+    J_regressor: Tensor,
+    parents: Tensor,
+    lbs_weights: Tensor,
+    pose2rot: bool = True
+):
+    ''' Performs Linear Blend Skinning with the given shape and pose parameters
+
+        Parameters
+        ----------
+        betas : torch.tensor BxNB
+            The tensor of shape parameters
+        pose : torch.tensor Bx(J + 1) * 3
+            The pose parameters in axis-angle format
+        v_template torch.tensor BxVx3
+            The template mesh that will be deformed
+        shapedirs : torch.tensor 1xNB
+            The tensor of PCA shape displacements
+        posedirs : torch.tensor Px(V * 3)
+            The pose PCA coefficients
+        J_regressor : torch.tensor JxV
+            The regressor array that is used to calculate the joints from
+            the position of the vertices
+        parents: torch.tensor J
+            The array that describes the kinematic tree for the model
+        lbs_weights: torch.tensor N x V x (J + 1)
+            The linear blend skinning weights that represent how much the
+            rotation matrix of each part affects each vertex
+        pose2rot: bool, optional
+            Flag on whether to convert the input pose tensor to rotation
+            matrices. The default value is True. If False, then the pose tensor
+            should already contain rotation matrices and have a size of
+            Bx(J + 1)x9
+        dtype: torch.dtype, optional
+
+        Returns
+        -------
+        verts: torch.tensor BxVx3
+            The vertices of the mesh after applying the shape and pose
+            displacements.
+        joints: torch.tensor BxJx3
+            The joints of the model
+    '''
+
+    batch_size = max(betas.shape[0], pose.shape[0])
+    device, dtype = betas.device, betas.dtype
+
+    # Add shape contribution
+    v_shaped = v_template + blend_shapes(betas, shapedirs)
+
+    # Get the joints
+    # NxJx3 array
+    J = vertices2joints(J_regressor, v_shaped)
+
+    # 3. Add pose blend shapes
+    # N x J x 3 x 3
+    ident = torch.eye(3, dtype=dtype, device=device)
+    if pose2rot:
+        rot_mats = batch_rodrigues(pose.view(-1, 3)).view(
+            [batch_size, -1, 3, 3])
+
+        pose_feature = (rot_mats[:, 1:, :, :] - ident).view([batch_size, -1])
+        # (N x P) x (P, V * 3) -> N x V x 3
+        pose_offsets = torch.matmul(
+            pose_feature, posedirs).view(batch_size, -1, 3)
+    else:
+        pose_feature = pose[:, 1:].view(batch_size, -1, 3, 3) - ident
+        rot_mats = pose.view(batch_size, -1, 3, 3)
+
+        pose_offsets = torch.matmul(pose_feature.view(batch_size, -1),
+                                    posedirs).view(batch_size, -1, 3)
+
+    v_posed = pose_offsets + v_shaped
+    
+    normals = vertex_normals(v_posed, faces)
+    B, V, _3 = normals.shape
+    normal_coord_sys = get_normal_coord_system(normals.view(-1, 3)).view(B, V, 3, 3)
+
+
+    # 4. Get the global joint location
+    J_transformed, A = batch_rigid_transform(rot_mats, J, parents, dtype=dtype)
+
+    # 5. Do skinning:
+    # W is N x V x (J + 1)
+    W = lbs_weights.unsqueeze(dim=0).expand([batch_size, -1, -1])
+    # (N x V x (J + 1)) x (N x (J + 1) x 16)
+    num_joints = J_regressor.shape[0]
+    T = torch.matmul(W, A.view(batch_size, num_joints, 16)) \
+        .view(batch_size, -1, 4, 4)
+
+    homogen_coord = torch.ones([batch_size, v_posed.shape[1], 1],
+                               dtype=dtype, device=device)
+    v_posed_homo = torch.cat([v_posed, homogen_coord], dim=2)
+    v_homo = torch.matmul(T, torch.unsqueeze(v_posed_homo, dim=-1))
+
+    verts = v_homo[:, :, :3, 0]
+
+    return verts, J_transformed, A[:, 1]
 
 class FLAME(nn.Module):
     """
@@ -467,11 +571,11 @@ class FLAMEModule(nn.Module):
             np.savez(path, id_coeff=id_coeff, exp_coeff=exp_coeff, scale=scale, pose=pose)
 
 
-
 class FLAMEGAModule(nn.Module):
     def __init__(self, batch_size):
         super(FLAMEGAModule, self).__init__()
-
+        self.batch_size = batch_size
+        
         self.translation_dims=3
         self.rotation_dims=3
         self.neck_pose_dims=3
@@ -494,19 +598,18 @@ class FLAMEGAModule(nn.Module):
         self.rotation = nn.Parameter(torch.zeros(batch_size, self.rotation_dims, dtype=torch.float32))
         self.translation = nn.Parameter(torch.zeros(batch_size, self.translation_dims, dtype=torch.float32))
 
-
+        # pose是啥啊
+        self.pose = nn.Parameter(torch.zeros(batch_size, 6, dtype=torch.float32))
 
         # 删掉scale，我们不希望有这个参数
         # self.scale = nn.Parameter(torch.ones(1, 1, dtype=torch.float32))
 
+
+        self.flame = FLAMEGA(batch_size)
+
         # self.register_buffer('neck_pose', torch.zeros(self.batch_size, 3, dtype=torch.float32)) # not optimized
         # self.register_buffer('global_rotation', torch.zeros(self.batch_size, 3, dtype=torch.float32)) # not optimized
         self.register_buffer('faces', self.flame.faces_tensor)
-
-
-        self.batch_size = batch_size
-        self.flame = FLAMEGA(batch_size)
-
 
 
     def forward(self):
@@ -527,13 +630,13 @@ class FLAMEGAModule(nn.Module):
         R = so3_exponential_map(self.pose[:, :3])
         T = self.pose[:, 3:]
 
-        vertices = torch.bmm(vertices * self.scale, R.permute(0,2,1)) + T[:, None, :]
-        landmarks = torch.bmm(landmarks * self.scale, R.permute(0,2,1)) + T[:, None, :]
+        vertices = torch.bmm(vertices, R.permute(0,2,1)) + T[:, None, :]
+        landmarks = torch.bmm(landmarks, R.permute(0,2,1)) + T[:, None, :]
         return vertices, landmarks
 
     def reg_loss(self, id_weight, exp_weight):
-        id_reg_loss = (self.id_coeff ** 2).sum()
-        exp_reg_loss = (self.exp_coeff[:, : self.exp_dims] ** 2).sum(-1).mean()
+        id_reg_loss = (self.shape ** 2).sum()
+        exp_reg_loss = (self.expr[:, : self.expr_dims] ** 2).sum(-1).mean()
         return id_reg_loss * id_weight + exp_reg_loss * exp_weight
     
     def save(self, path, batch_id=-1):
@@ -582,7 +685,7 @@ class FLAMEGA(nn.Module):
         self.shape_dims = 100
         self.exp_dims = 50
 
-        super(FLAME, self).__init__()
+        super(FLAMEGA, self).__init__()
         print("creating the FLAME Decoder")
         with open('assets/FLAME/generic_model.pkl', 'rb') as f:
             self.flame_model = Struct(**pickle.load(f, encoding='latin1'))
@@ -622,6 +725,7 @@ class FLAMEGA(nn.Module):
             'shapedirs',
             to_tensor(to_np(shapedirs), dtype=self.dtype))
 
+        # jaw
         j_regressor = to_tensor(to_np(
             self.flame_model.J_regressor), dtype=self.dtype)
         self.register_buffer('J_regressor', j_regressor)
@@ -722,28 +826,38 @@ class FLAMEGA(nn.Module):
 
         return dyn_lmk_faces_idx, dyn_lmk_b_coords
 
-    def forward(self, shape_params, expression_params, pose_params, neck_pose, eye_pose,
-                translation):
-        """
-            Input:
-                shape_params: N X number of shape parameters
-                expression_params: N X number of expression parameters
-                pose_params: N X number of pose parameters
-            return:
-                vertices: N X V X 3
-                landmarks: N X number of landmarks X 3
-        """
+    def forward(self, 
+        shape_params, 
+        expression_params, 
+        pose_params, 
+        translation
+        ):
+        # shape_params = shape_params
+        # expression_params = expression_params
+        # rotation, neck_pose, jaw_rotation, eye_pose = pose_params.split([3, 3, 3, 6], dim=1)
+        # translation = translation
+
+        # beats
         betas = torch.cat([shape_params,self.shape_betas, expression_params, self.expression_betas], dim=1)
+
         # rotation, neck, jaw, eyes
         # FLAME的姿态参数由15个参数组成，即3个全局旋转参数、3个头部绕颈旋转参数、3个下颌旋转参数以及每个眼球3个参数。
         # https://github.com/TimoBolkart/TF_FLAME/issues/40#issuecomment-739552785
-        full_pose = torch.cat([pose_params[:,:3], neck_pose, pose_params[:,3:], eye_pose], dim=1)
+        
+        # pose
+        full_pose = pose_params
+        # v_template
         template_vertices = self.v_template.unsqueeze(0).repeat(self.batch_size, 1, 1)
 
+
         faces = self.faces_tensor.unsqueeze(0).repeat(shape_params.shape[0], 1, 1)
-        vertices, _ = lbs(betas, full_pose, template_vertices,
+        vertices, J, mat_rot = lbs_ga(betas, full_pose, template_vertices,
                                faces, self.shapedirs, self.posedirs,
                                self.J_regressor, self.parents, self.lbs_weights, )
+
+
+        vertices = vertices + translation[:, None, :]
+        J = J + translation[:, None, :]
 
         lmk_faces_idx = self.lmk_faces_idx.unsqueeze(dim=0).repeat(
             self.batch_size, 1)
@@ -767,3 +881,49 @@ class FLAMEGA(nn.Module):
                                              lmk_bary_coords)
 
         return vertices, landmarks
+
+    # def forward(self, shape_params, expression_params, pose_params, neck_pose, eye_pose,
+    #             translation):
+    #     """
+    #         Input:
+    #             shape_params: N X number of shape parameters
+    #             expression_params: N X number of expression parameters
+    #             pose_params: N X number of pose parameters
+    #         return:
+    #             vertices: N X V X 3
+    #             landmarks: N X number of landmarks X 3
+    #     """
+    #     betas = torch.cat([shape_params,self.shape_betas, expression_params, self.expression_betas], dim=1)
+    #     # rotation, neck, jaw, eyes
+    #     # FLAME的姿态参数由15个参数组成，即3个全局旋转参数、3个头部绕颈旋转参数、3个下颌旋转参数以及每个眼球3个参数。
+    #     # https://github.com/TimoBolkart/TF_FLAME/issues/40#issuecomment-739552785
+    #     full_pose = torch.cat([pose_params[:,:3], neck_pose, pose_params[:,3:], eye_pose], dim=1)
+    #     template_vertices = self.v_template.unsqueeze(0).repeat(self.batch_size, 1, 1)
+
+    #     faces = self.faces_tensor.unsqueeze(0).repeat(shape_params.shape[0], 1, 1)
+    #     vertices, _ = lbs(betas, full_pose, template_vertices,
+    #                            faces, self.shapedirs, self.posedirs,
+    #                            self.J_regressor, self.parents, self.lbs_weights, )
+
+    #     lmk_faces_idx = self.lmk_faces_idx.unsqueeze(dim=0).repeat(
+    #         self.batch_size, 1)
+    #     lmk_bary_coords = self.lmk_bary_coords.unsqueeze(dim=0).repeat(
+    #         self.batch_size, 1, 1)
+
+    #     dyn_lmk_faces_idx, dyn_lmk_bary_coords = self._find_dynamic_lmk_idx_and_bcoords(
+    #         vertices, full_pose, self.dynamic_lmk_faces_idx,
+    #         self.dynamic_lmk_bary_coords,
+    #         self.neck_kin_chain, dtype=self.dtype)
+
+    #     lmk_faces_idx = torch.cat([dyn_lmk_faces_idx, lmk_faces_idx], 1)
+    #     lmk_bary_coords = torch.cat(
+    #         [dyn_lmk_bary_coords, lmk_bary_coords], 1)
+        
+    #     lmk_faces_idx = torch.cat([lmk_faces_idx[:, 0:48], lmk_faces_idx[:, 49:54], lmk_faces_idx[:, 55:68]], 1)
+    #     lmk_bary_coords = torch.cat([lmk_bary_coords[:, 0:48], lmk_bary_coords[:, 49:54], lmk_bary_coords[:, 55:68]], 1)
+
+    #     landmarks = vertices2landmarks(vertices, self.faces_tensor,
+    #                                          lmk_faces_idx,
+    #                                          lmk_bary_coords)
+
+    #     return vertices, landmarks
