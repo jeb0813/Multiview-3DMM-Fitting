@@ -21,6 +21,14 @@ class config():
         self.cfg.visualize = False
         self.cfg.save_vertices = False
 
+        # NeRSemble_ga
+        self.cfg.root_folder = ''
+        self.cfg.image_suffix = 'images'
+        self.cfg.landmark_suffix = 'landmarks'
+        self.cfg.camera_suffix = 'cameras'
+        self.cfg.param_suffix = 'params'
+        self.cfg.image_size_x = 1920
+        self.cfg.image_size_y = 1080
 
     def get_cfg(self):
         return  self.cfg.clone()

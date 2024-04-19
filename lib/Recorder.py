@@ -27,11 +27,10 @@ class Recorder():
             vertices, landmarks = log_data['face_model']()
         
         for n, frame in enumerate(frames):
-            os.makedirs(os.path.join(self.save_folder, frame), exist_ok=True)
-            face_model.save('%s/params.npz' % (os.path.join(self.save_folder, frame)), batch_id=n)
-            np.save('%s/lmk_3d.npy' % (os.path.join(self.save_folder, frame)), landmarks[n].cpu().numpy())
+            face_model.save('{:s}/{:05d}.npz'.format(self.save_folder,n), batch_id=n)
+            np.save('{:s}/{:05d}_lmk_3d.npy'.format(self.save_folder,n), landmarks[n].cpu().numpy())
             if self.save_vertices:
-                np.save('%s/vertices.npy' % (os.path.join(self.save_folder, frame)), vertices[n].cpu().numpy())
+                np.save('{:s}/{:05d}_vertices.npy'.format(self.save_folder,n), vertices[n].cpu().numpy())
 
             if self.visualize:
                 for v in range(intrinsics.shape[1]):
@@ -42,5 +41,6 @@ class Recorder():
                     self.camera.init_renderer(intrinsic=intrinsics[n, v], extrinsic=extrinsics[n, v])
                     render_image = self.camera.render(mesh)
 
-                    cv2.imwrite('%s/vis_%d.jpg' % (os.path.join(self.save_folder, frame), v), render_image[:,:,::-1])
+                    cv2.imwrite('{:s}/{:05d}_vis_{:d}.jpg'.format(self.save_folder,n,v), render_image[:,:,::-1])
+
                 

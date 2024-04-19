@@ -14,6 +14,7 @@ os.environ['PYGLET_WINDOW'] = 'dummy'
 
 
 if __name__ == '__main__':
+    import ipdb
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, default='config/sample_video.yaml')
     arg = parser.parse_args()
@@ -31,5 +32,5 @@ if __name__ == '__main__':
     recorder = Recorder(save_folder=cfg.param_folder, camera=camera, visualize=cfg.visualize, save_vertices=cfg.save_vertices)
 
     fitter = Fitter(cfg, dataset, face_model, camera, recorder, device)
-
+    # ipdb.set_trace()
     fitter.run()
