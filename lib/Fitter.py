@@ -15,6 +15,7 @@ class Fitter():
 
         self.optimizers = [torch.optim.Adam([{'params' : self.face_model.scale, 'lr' : 1e-3},
                                              {'params' : self.face_model.pose, 'lr' : 1e-2}]),
+                                             #{'params' : self.face_model.translation, 'lr' : 1e-2}]),
                            torch.optim.Adam([{'params' : self.face_model.parameters(), 'lr' : 1e-3}])]
     
     def run(self):
@@ -86,6 +87,7 @@ class Fitter():
             'intrinsics': intrinsics0,
             'extrinsics': extrinsics0
         }
+        print('writing')
         self.recorder.log(log)
 
 
@@ -106,9 +108,9 @@ class MyFitter(Fitter):
         self.recorder = recorder
         self.device = device
 
-        self.optimizers = [torch.optim.Adam([{'params' : self.face_model.scale, 'lr' : 1e-3},
-                                             {'params' : self.face_model.pose, 'lr' : 1e-2}]),
-                           torch.optim.Adam([{'params' : self.face_model.parameters(), 'lr' : 1e-3}])]
+        #self.optimizers = [torch.optim.Adam([{'params' : self.face_model.scale, 'lr' : 1e-3},
+        #                                     {'params' : self.face_model.pose, 'lr' : 1e-2}]),
+        #                   torch.optim.Adam([{'params' : self.face_model.parameters(), 'lr' : 1e-3}])]
     
     def run(self):
         print("loading data")

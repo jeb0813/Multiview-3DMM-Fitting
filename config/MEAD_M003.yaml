@@ -1,0 +1,15 @@
+image_folder: '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO/M003/neutral/level_1/images'
+camera_folder: '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO/M003/neutral/level_1/cameras'
+landmark_folder: '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO/M003/neutral/level_1/landmarks'
+param_folder: '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO/M003/neutral/level_1/params'
+gpu_id: 0
+camera_ids: ['2']
+image_size: 1080
+face_model: 'BFM'
+# face_model: 'FLAME'
+reg_id_weight: 1e-7
+reg_exp_weight: 1e-7
+# save_vertices: False
+save_vertices: True
+# visualize: True
+visualize: False

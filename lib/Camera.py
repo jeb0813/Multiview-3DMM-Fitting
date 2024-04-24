@@ -23,7 +23,7 @@ class Camera():
         query_pts = torch.bmm(calibrations[:, :3, :3], query_pts)
         query_pts = query_pts + calibrations[:, :3, 3:4]
         query_pts_xy = query_pts[:, :2, :] / query_pts[:, 2:, :]
-        query_pts_xy = query_pts_xy
+        # query_pts_xy = query_pts_xy
         return query_pts_xy
 
     def init_renderer(self, intrinsic, extrinsic):
