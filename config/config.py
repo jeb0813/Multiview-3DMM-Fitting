@@ -30,6 +30,9 @@ class config():
         self.cfg.image_size_x = 1920
         self.cfg.image_size_y = 1080
 
+        # MEAD_single_vid
+        self.cfg.data_source = ''
+
     def get_cfg(self):
         return  self.cfg.clone()
     

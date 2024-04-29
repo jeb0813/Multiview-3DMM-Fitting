@@ -20,7 +20,15 @@ CUDA_VISIBLE_DEVICES=3 python fitting_ga.py --config config/NeRSemble_ga_074_for
 
 
 我们假设json文件是已经预处理好了的
-1. preprocess_mead.py
-2. remove_background_mead.py
-3. detect_landmarks_mead.py
-4. fitting_mead.py
+1. preprocess
+CUDA_VISIBLE_DEVICES=2 python preprocess_mead_single_vid.py
+2. remove_background
+CUDA_VISIBLE_DEVICES=2 python remove_background_mead_single_vid.py
+3. detect_landmarks
+CUDA_VISIBLE_DEVICES=2 python detect_landmarks_mead_single_vid.py --config config/MEAD_M003_single_vid.yaml
+  1结束后, 2可以和3并行
+4. fitting_mead
+CUDA_VISIBLE_DEVICES=2 python fitting_mead_single_vid.py --config config/MEAD_M003_single_vid.yaml
+5. 划分数据集
+
+

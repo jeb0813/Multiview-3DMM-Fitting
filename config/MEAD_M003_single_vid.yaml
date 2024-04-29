@@ -1,0 +1,17 @@
+# image_folder: '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO_single_vid/M003'
+# camera_folder: '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO_single_vid/M003'
+# landmark_folder: '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO_single_vid/M003'
+# param_folder: '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO_single_vid/M003'
+
+data_source: '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO_single_vid/M003'
+gpu_id: 0
+camera_ids: ['2']
+image_size: 1080
+face_model: 'BFM'
+# face_model: 'FLAME'
+reg_id_weight: 1e-7
+reg_exp_weight: 1e-7
+# save_vertices: False
+save_vertices: True
+# visualize: True
+visualize: False
