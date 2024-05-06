@@ -30,5 +30,9 @@ CUDA_VISIBLE_DEVICES=2 python detect_landmarks_mead_single_vid.py --config confi
 4. fitting_mead
 CUDA_VISIBLE_DEVICES=2 python fitting_mead_single_vid.py --config config/MEAD_M003_single_vid.yaml
 5. 划分数据集
+utils/split.py
+6. face parsing 
+首先生成masked image
+CUDA_VISIBLE_DEVICES=3 python face_parsing.py --config config/MEAD_M003_single_vid.yaml
 
 

@@ -95,42 +95,8 @@ def ResizeImage(target_size, source_size, image=None, K=None):
         image = cv2.resize(image, dsize=target_size)
     return image, K
 
-def _extract_frames(vid_path,root_folder_path):
-    """
-    背景提取，抽帧，重命名
-    """
-    temp_path = os.path.join(root_folder_path, 'temp')
-    if not os.path.exists(temp_path):
-        os.makedirs(temp_path)
-    
-    # model应该被持久化到显存，不要反复加载
-    cmd = "python /data/chenziang/codes/SplattingAvatar/preprocess/IMavatar/preprocess/submodules/RobustVideoMatting/segmentation_api.py --input {video_path} --output {img_path}".format(video_path=os.path.join(root_folder_path,vid_path), img_path=temp_path)
-    os.system(cmd)
-
-    # 抽帧重命名
-    cnt=-1
-    imgs=os.listdir(temp_path)
-    imgs.sort()
-    for img in imgs:
-        cnt+=1
-        if cnt%3!=0:
-            # 删除这张图
-            # print("删除:",img)
-            os.remove(os.path.join(temp_path,img))
-        else:
-            # 重命名
-            # print("重命名:",img)
-            new_name = "{:04d}.png".format(cnt//3)
-            os.rename(os.path.join(temp_path,img),os.path.join(temp_path,new_name))
-
-            # 变换为mask
-            convert_png_to_jpg_with_alpha(os.path.join(temp_path,new_name),os.path.join(temp_path,new_name.replace('.png','.jpg')))
-
-
 
 def extract_masks(id_list,emos=['neutral'], views=['front']):
-    # log_path = '/data/chenziang/codes/Multiview-3DMM-Fitting/log.json'
-    # log={}
     for id in id_list:
         for emo in emos:
             print("Processing %s %s" % (id, emo))
@@ -140,7 +106,6 @@ def extract_masks(id_list,emos=['neutral'], views=['front']):
             video_folders_level.sort()
 
             for video_folder_level in video_folders_level:
-                # fids = defaultdict(int)
                 out_folder_level = os.path.join(DATA_OUTPUT, id, emo, video_folder_level)
                 
                 level_path = os.path.join(emo_path, video_folder_level)
@@ -158,9 +123,6 @@ def extract_masks(id_list,emos=['neutral'], views=['front']):
 
                     out_folder_vid = os.path.join(out_folder_level, video_folder)
                     os.makedirs(out_folder_vid, exist_ok=True)
-
-                    # import ipdb
-                    # ipdb.set_trace()
 
                     # 这里实际上在遍历多视角
                     for video_path in video_paths:
@@ -182,10 +144,10 @@ def extract_masks(id_list,emos=['neutral'], views=['front']):
                         masks.sort()
                         # cnt=0
                         for mask in masks:
-                            mask_path = os.path.join(mask_out_path, mask)
+                            mask_path_png = os.path.join(mask_out_path, mask)
 
                             # 打开PNG图像
-                            png_img = Image.open(mask_path)
+                            png_img = Image.open(mask_path_png)
 
                             png_array = np.array(png_img)
 
@@ -193,9 +155,6 @@ def extract_masks(id_list,emos=['neutral'], views=['front']):
                             
                             alpha = png_array[..., 3]
                             jpg_array[..., :3] = np.round(np.expand_dims(alpha / 255.0, axis=-1) * np.array([255, 255, 255])).astype(np.uint8)
-
-                            # # 使用NumPy的广播功能，根据不透明度设置颜色
-                            # jpg_array[...,:3][png_array[...,3] != 0] = [0, 0, 0]
 
                             # 创建PIL图像对象
                             jpg_image = Image.fromarray(jpg_array)
@@ -205,21 +164,6 @@ def extract_masks(id_list,emos=['neutral'], views=['front']):
 
                             # 打开msak图像
                             mask_img = cv2.imread(os.path.join(mask_out_path, mask.replace('.png','.jpg')))
-
-                            # #######
-                            # mask_path = os.path.join(mask_out_path, mask)
-
-                            # # 打开PNG图像
-                            # png_img = cv2.imread(mask_path, cv2.IMREAD_UNCHANGED)
-                            # alpha = png_img[..., 3:]
-
-                            # # 形状和png_img一样的全0 ndarray
-                            # jpg_array = np.zeros_like(png_img[..., :3])
-
-                            # # 使用 np.where() 来根据条件设置颜色
-                            # jpg_array = np.where(alpha != 0, [255, 255, 255], jpg_array)
-
-                            # mask_img = jpg_array
 
                             mask_img, _ = CropImage(LEFT_UP, CROP_SIZE, mask_img)
                             mask_img, _ = ResizeImage(SIZE, CROP_SIZE, mask_img)
@@ -232,37 +176,10 @@ def extract_masks(id_list,emos=['neutral'], views=['front']):
                             cv2.imwrite(mask_path, mask_img)
                             cv2.imwrite(mask_lowres_path, mask_img_lower)
 
-                            # log[fids[camera_id]] = {'video_folder':video_folder,
-                                                    # 'frame_id':cnt}
                             # cnt+=1
                             fids[camera_id] += 1
 
-                        # exit()
 
-    # with open(log_path,'w') as f:
-        # json.dump(log,f)
-
-
-
-                    # masks = os.listdir(os.path.join(DATA_SOURCE, id, emo, video_folder, 'temp'))
-                    # masks = [mask for mask in masks if mask.endswith('.jpg')]
-                    # masks.sort()
-
-                    # for mask in masks:
-                    #     mask_path = os.path.join(DATA_SOURCE, id, emo, video_folder, 'temp', mask)
-                    #     mask_img = cv2.imread(mask_path)
-                    #     mask_img, _ = CropImage(LEFT_UP, CROP_SIZE, mask_img)
-                    #     mask_img, _ = ResizeImage(SIZE, CROP_SIZE, mask_img)
-                        
-                    #     mask_img_lower = cv2.resize(mask_img, SIZE_LOWRES)
-
-                    #     mask_path = os.path.join(DATA_OUTPUT, id, emo, 'images', '%04d' % fids[camera_id], 'mask_' + camera_id + '.jpg')
-                    #     mask_lowres_path = os.path.join(DATA_OUTPUT, id, emo, 'images', '%04d' % fids[camera_id], 'mask_lowres_' + camera_id + '.jpg')
-
-                    #     cv2.imwrite(mask_path, mask_img)
-                    #     cv2.imwrite(mask_lowres_path, mask_img_lower)
-
-                    #     fids[camera_id] += 1
                     
 
 
