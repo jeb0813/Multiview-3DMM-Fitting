@@ -110,9 +110,9 @@ def vis_parsing_maps(im, parsing_anno, stride, save_im=True, save_path='face_par
 
 
 
-def get_parsing_mask(img_folder):
+def get_parsing_mask(img_folder, pattern = r'masked_\d+\.jpg'):
     frames = sorted(os.listdir(img_folder))
-    pattern = r'masked_\d+\.jpg'
+    # pattern = r'masked_\d+\.jpg'
 
     for frame in frames:
         img_frame_folder = os.path.join(img_folder, frame)
@@ -172,9 +172,9 @@ def get_area(mask_image, selected_labels=[], part_colors=[]):
     return result_image
 
 
-def remove_torso(img_folder):
+def remove_torso(img_folder, pattern = r'masked_\d+\.jpg'):
     frames = sorted(os.listdir(img_folder))
-    pattern = r'masked_\d+\.jpg'
+    # pattern = r'masked_\d+\.jpg'
     for frame in frames:
         img_frame_folder = os.path.join(img_folder, frame)
         imgs_path = sorted(os.listdir(img_frame_folder))
