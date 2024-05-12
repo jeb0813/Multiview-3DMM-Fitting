@@ -185,7 +185,8 @@ def remove_torso(img_folder, pattern = r'masked_\d+\.jpg'):
         for img_raw_path in imgs_raw_path:
             raw_image = cv2.imread(os.path.join(img_frame_folder, img_raw_path))
             parsing_image = cv2.imread(os.path.join(img_frame_folder, img_raw_path.replace('masked', 'face_parsing').replace('jpg', 'png')))
-            mask_area = get_area(parsing_image, selected_labels=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17])
+            # mask_area = get_area(parsing_image, selected_labels=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17])
+            mask_area = get_area(parsing_image, selected_labels=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 17])
 
             # mask_area resize 到 raw_image 大小
             mask_area = cv2.resize(mask_area, (raw_image.shape[1], raw_image.shape[0]), interpolation=cv2.INTER_NEAREST)

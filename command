@@ -36,5 +36,7 @@ CUDA_VISIBLE_DEVICES=3 python face_parsing.py --config config/MEAD_M003_single_v
 
 
 对val生成的数据进行预处理
-CUDA_VISIBLE_DEVICES=3 python face_parsing_val.py 
+CUDA_VISIBLE_DEVICES=2 python face_parsing_val.py 
+
+CUDA_VISIBLE_DEVICES=2 python fitting_mead_single_vid.py --config config/MEAD_M003_flame.yaml
 

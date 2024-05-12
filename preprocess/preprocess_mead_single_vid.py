@@ -83,32 +83,32 @@ def cp_vid(dataset_path, cam2id, emo, views):
                 out_video_path = os.path.join(out_trial_path, cam2id[view] + '_' + view + '.mp4')
                 os.system('cp %s %s' % (video_path, out_video_path))
     
-    # # 处理音频
-    # audio_folder = os.path.join(dataset_path, 'audio')
-    # audio_emo_path = os.path.join(audio_folder, emo)
-    # if not os.path.exists(audio_emo_path):
-    #     raise ValueError("No such path %s" % audio_emo_path)
-    # audio_level_folders = os.listdir(audio_emo_path)
-    # audio_level_folders.sort()
+    # 处理音频
+    audio_folder = os.path.join(dataset_path, 'audio')
+    audio_emo_path = os.path.join(audio_folder, emo)
+    if not os.path.exists(audio_emo_path):
+        raise ValueError("No such path %s" % audio_emo_path)
+    audio_level_folders = os.listdir(audio_emo_path)
+    audio_level_folders.sort()
 
-    # for audio_level_folder in audio_level_folders:
-    #     out_level_path = os.path.join(out_path, audio_level_folder)
-    #     if not os.path.exists(out_level_path):
-    #         raise ValueError("No such path %s" % out_level_path)
+    for audio_level_folder in audio_level_folders:
+        out_level_path = os.path.join(out_path, audio_level_folder)
+        if not os.path.exists(out_level_path):
+            raise ValueError("No such path %s" % out_level_path)
         
-    #     audio_paths = os.listdir(os.path.join(audio_emo_path, audio_level_folder))
-    #     audio_paths.sort()
+        audio_paths = os.listdir(os.path.join(audio_emo_path, audio_level_folder))
+        audio_paths.sort()
 
-    #     for audio_path in audio_paths:
-    #         out_trial = audio_path[:3]
-    #         out_trial_path = os.path.join(out_level_path, out_trial)
-    #         if not os.path.exists(out_trial_path):
-    #             raise ValueError("No such path %s" % out_trial_path)
+        for audio_path in audio_paths:
+            out_trial = audio_path[:3]
+            out_trial_path = os.path.join(out_level_path, out_trial)
+            if not os.path.exists(out_trial_path):
+                raise ValueError("No such path %s" % out_trial_path)
 
-    #         # 复制当前音频到out_id_path
-    #         audio_path = os.path.join(audio_emo_path, audio_level_folder, audio_path)
-    #         out_audio_path = os.path.join(out_trial_path, 'audio.wav')
-    #         os.system('cp %s %s' % (audio_path, out_audio_path))
+            # 复制当前音频到out_id_path
+            audio_path = os.path.join(audio_emo_path, audio_level_folder, audio_path)
+            out_audio_path = os.path.join(out_trial_path, 'audio.wav')
+            os.system('cp %s %s' % (audio_path, out_audio_path))
 
 
 def extract_frames(id_list,emos=['neutral'], views=['front']):
@@ -214,7 +214,8 @@ if __name__ == "__main__":
     CROP_SIZE = [1080, 1080]
 
     # 超参数改为1080， 1080
-    SIZE = [1080, 1080]
+    # SIZE = [1080, 1080]
+    SIZE = [2048, 2048]
     SIZE_LOWRES = [256, 256]
 
     DATA_SOURCE = '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD'
@@ -229,5 +230,5 @@ if __name__ == "__main__":
     emos = ['angry', 'contempt', 'disgusted', 'fear', 'happy', 'sad', 'surprised']
     views = ['front']
     # ipdb.set_trace() 
-    extract_frames(['M003'], emos, views)
+    extract_frames(['M005'], emos, views)
 

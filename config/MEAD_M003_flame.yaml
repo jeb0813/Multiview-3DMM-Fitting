@@ -1,7 +1,9 @@
-image_folder: '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO/M003_flame/neutral/level_1/images'
-camera_folder: '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO/M003_flame/neutral/level_1/cameras'
-landmark_folder: '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO/M003_flame/neutral/level_1/landmarks'
-param_folder: '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO/M003_flame/neutral/level_1/params'
+# image_folder: '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO/M003_flame/neutral/level_1/images'
+# camera_folder: '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO/M003_flame/neutral/level_1/cameras'
+# landmark_folder: '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO/M003_flame/neutral/level_1/landmarks'
+# param_folder: '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO/M003_flame/neutral/level_1/params'
+
+data_source: '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO_single_vid/M003_flame'
 gpu_id: 0
 camera_ids: ['2']
 image_size: 1080

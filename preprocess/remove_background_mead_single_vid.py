@@ -190,7 +190,8 @@ if __name__ == "__main__":
     CROP_SIZE = [1080, 1080]
 
     # 超参数不改
-    SIZE = [1080, 1080]
+    # SIZE = [1080, 1080]
+    SIZE = [2048, 2048]
     SIZE_LOWRES = [256, 256]
     # 
 
@@ -216,5 +217,5 @@ if __name__ == "__main__":
     views = ['front']
     # ipdb.set_trace() 
 
-    extract_masks(['M003'], emos, views)
+    extract_masks(['M005'], emos, views)
     
