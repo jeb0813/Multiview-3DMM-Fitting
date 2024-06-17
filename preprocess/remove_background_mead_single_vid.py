@@ -8,6 +8,10 @@ import json
 from PIL import Image
 from collections import defaultdict
 
+import argparse
+
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 # source deactivate
 # source activate splatting
@@ -96,107 +100,127 @@ def ResizeImage(target_size, source_size, image=None, K=None):
     return image, K
 
 
-def extract_masks(id_list,emos=['neutral'], views=['front']):
-    for id in id_list:
-        for emo in emos:
-            print("Processing %s %s" % (id, emo))
-            emo_path = os.path.join(DATA_SOURCE, id, emo)
+def extract_masks(id,emos=['neutral'], views=['front']):
+    for emo in emos:
+        print("Processing %s %s" % (id, emo))
+        emo_path = os.path.join(DATA_SOURCE, id, emo)
 
-            video_folders_level = os.listdir(emo_path)
-            video_folders_level.sort()
+        video_folders_level = os.listdir(emo_path)
+        video_folders_level.sort()
 
-            for video_folder_level in video_folders_level:
-                out_folder_level = os.path.join(DATA_OUTPUT, id, emo, video_folder_level)
-                
-                level_path = os.path.join(emo_path, video_folder_level)
-                print("Processing %s %s %s" % (id, emo, video_folder_level))
-                video_folders = os.listdir(level_path)
-                video_folders.sort()
+        for video_folder_level in video_folders_level:
+            out_folder_level = os.path.join(DATA_OUTPUT, id, emo, video_folder_level)
+            
+            level_path = os.path.join(emo_path, video_folder_level)
+            print("Processing %s %s %s" % (id, emo, video_folder_level))
+            video_folders = os.listdir(level_path)
+            video_folders.sort()
 
-                for video_folder in video_folders:
-                    # 现在计数器是对每一次trial计数
-                    fids = defaultdict(int)
-                    print("Processing %s" % (video_folder))
-                    video_paths = os.listdir(os.path.join(level_path, video_folder))
-                    video_paths = [x for x in video_paths if x.endswith('.mp4')]
-                    video_paths.sort()
+            for video_folder in video_folders:
+                # 现在计数器是对每一次trial计数
+                fids = defaultdict(int)
+                print("Processing %s" % (video_folder))
+                video_paths = os.listdir(os.path.join(level_path, video_folder))
+                video_paths = [x for x in video_paths if x.endswith('.mp4')]
+                video_paths.sort()
 
-                    out_folder_vid = os.path.join(out_folder_level, video_folder)
-                    os.makedirs(out_folder_vid, exist_ok=True)
+                out_folder_vid = os.path.join(out_folder_level, video_folder)
+                os.makedirs(out_folder_vid, exist_ok=True)
 
-                    # 这里实际上在遍历多视角
-                    for video_path in video_paths:
-                        camera_id = video_path.split('.')[0].split('_')[0] 
-                        mask_out_path = os.path.join(level_path, video_folder, video_path.replace('.mp4', ''))
-                        # 进行转换
-                        if os.path.exists(mask_out_path):
-                            pass
-                        else:
-                            convert_video(
-                                model,
-                                input_source=os.path.join(level_path, video_folder, video_path),
-                                output_type='png_sequence',
-                                output_composition=mask_out_path
-                                )
-                        # ipdb.set_trace()
-                        masks = os.listdir(mask_out_path)
-                        masks = [mask for mask in masks if mask.endswith('.png')]
-                        masks.sort()
-                        # cnt=0
-                        for mask in masks:
-                            mask_path_png = os.path.join(mask_out_path, mask)
+                # 这里实际上在遍历多视角
+                for video_path in video_paths:
+                    camera_id = video_path.split('.')[0].split('_')[0] 
+                    mask_out_path = os.path.join(level_path, video_folder, video_path.replace('.mp4', ''))
+                    # 进行转换
+                    if os.path.exists(mask_out_path):
+                        pass
+                    else:
+                        convert_video(
+                            model,
+                            input_source=os.path.join(level_path, video_folder, video_path),
+                            output_type='png_sequence',
+                            output_composition=mask_out_path
+                            )
+                    # ipdb.set_trace()
+                    masks = os.listdir(mask_out_path)
+                    masks = [mask for mask in masks if mask.endswith('.png')]
+                    masks.sort()
+                    # cnt=0
+                    for mask in masks:
+                        mask_path_png = os.path.join(mask_out_path, mask)
 
-                            # 打开PNG图像
-                            png_img = Image.open(mask_path_png)
+                        # 打开PNG图像
+                        png_img = Image.open(mask_path_png)
 
-                            png_array = np.array(png_img)
+                        png_array = np.array(png_img)
 
-                            jpg_array = np.full(png_array.shape[:2] + (3,), 255, dtype=np.uint8)
-                            
-                            alpha = png_array[..., 3]
-                            jpg_array[..., :3] = np.round(np.expand_dims(alpha / 255.0, axis=-1) * np.array([255, 255, 255])).astype(np.uint8)
+                        jpg_array = np.full(png_array.shape[:2] + (3,), 255, dtype=np.uint8)
+                        
+                        alpha = png_array[..., 3]
+                        jpg_array[..., :3] = np.round(np.expand_dims(alpha / 255.0, axis=-1) * np.array([255, 255, 255])).astype(np.uint8)
 
-                            # 创建PIL图像对象
-                            jpg_image = Image.fromarray(jpg_array)
+                        # 创建PIL图像对象
+                        jpg_image = Image.fromarray(jpg_array)
 
-                            # 保存结果为JPG图像
-                            jpg_image.save(os.path.join(mask_out_path, mask.replace('.png','.jpg')))
+                        # 保存结果为JPG图像
+                        jpg_image.save(os.path.join(mask_out_path, mask.replace('.png','.jpg')))
 
-                            # 打开msak图像
-                            mask_img = cv2.imread(os.path.join(mask_out_path, mask.replace('.png','.jpg')))
+                        # 打开msak图像
+                        mask_img = cv2.imread(os.path.join(mask_out_path, mask.replace('.png','.jpg')))
 
-                            mask_img, _ = CropImage(LEFT_UP, CROP_SIZE, mask_img)
-                            mask_img, _ = ResizeImage(SIZE, CROP_SIZE, mask_img)
-                            
-                            mask_img_lower = cv2.resize(mask_img.astype(float), SIZE_LOWRES)
+                        mask_img, _ = CropImage(LEFT_UP, CROP_SIZE, mask_img)
+                        mask_img, _ = ResizeImage(SIZE, CROP_SIZE, mask_img)
+                        
+                        mask_img_lower = cv2.resize(mask_img.astype(float), SIZE_LOWRES)
 
-                            mask_path = os.path.join(out_folder_vid, 'images', '%04d' % fids[camera_id], 'mask_' + camera_id + '.jpg')
-                            mask_lowres_path = os.path.join(out_folder_vid, 'images', '%04d' % fids[camera_id], 'mask_lowres_' + camera_id + '.jpg')
+                        mask_path = os.path.join(out_folder_vid, 'images', '%04d' % fids[camera_id], 'mask_' + camera_id + '.jpg')
+                        mask_lowres_path = os.path.join(out_folder_vid, 'images', '%04d' % fids[camera_id], 'mask_lowres_' + camera_id + '.jpg')
 
-                            cv2.imwrite(mask_path, mask_img)
-                            cv2.imwrite(mask_lowres_path, mask_img_lower)
+                        cv2.imwrite(mask_path, mask_img)
+                        cv2.imwrite(mask_lowres_path, mask_img_lower)
 
-                            # cnt+=1
-                            fids[camera_id] += 1
+                        # cnt+=1
+                        fids[camera_id] += 1
 
+def get_args():
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data_source', type=str, default='/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD')
+    parser.add_argument('--data_output', type=str, default='../MEAD_MONO_single_vid')
+    parser.add_argument('--left_up', type=list, default=[(1920-1080)//2, 0])
+    parser.add_argument('--crop_size', type=list, default=[1080, 1080])
+    parser.add_argument('--size', type=list, default=[1080, 1080])
+    parser.add_argument('--size_lowres', type=list, default=[256, 256])
+    parser.add_argument('--subject_id', type=str, default='M003')
+    return parser.parse_args()
                     
 
 
 if __name__ == "__main__":
+    args = get_args()
+
+    LEFT_UP = args.left_up
+    CROP_SIZE = args.crop_size
+    SIZE = args.size
+    SIZE_LOWRES = args.size_lowres
+    DATA_SOURCE = args.data_source
+    DATA_OUTPUT = args.data_output
+    subject_id = args.subject_id
+
+
     import ipdb
     # 确保裁切后画面中心不动
-    LEFT_UP = [(1920-1080)//2, 0]
-    CROP_SIZE = [1080, 1080]
+    # LEFT_UP = [(1920-1080)//2, 0]
+    # CROP_SIZE = [1080, 1080]
 
     # 超参数不改
     # SIZE = [1080, 1080]
-    SIZE = [2048, 2048]
-    SIZE_LOWRES = [256, 256]
+    # SIZE = [2048, 2048]
+    # SIZE_LOWRES = [256, 256]
     # 
 
-    DATA_SOURCE = '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD'
-    DATA_OUTPUT = '../MEAD_MONO_single_vid'
+    # DATA_SOURCE = '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD'
+    # DATA_OUTPUT = '../MEAD_MONO_single_vid'
 
 
     # loading video matting
@@ -211,11 +235,9 @@ if __name__ == "__main__":
         os.makedirs(DATA_OUTPUT, exist_ok=True)
 
     import ipdb
-    # emos = ['neutral', 'angry', 'contempt', 'disgusted', 'fear', 'happy', 'sad', 'surprised']
-    # emos = ['neutral']
-    emos = ['angry', 'contempt', 'disgusted', 'fear', 'happy', 'sad', 'surprised']
+    emos = ['neutral', 'angry', 'contempt', 'disgusted', 'fear', 'happy', 'sad', 'surprised']
     views = ['front']
     # ipdb.set_trace() 
 
-    extract_masks(['M005'], emos, views)
+    extract_masks(subject_id, emos, views)
     

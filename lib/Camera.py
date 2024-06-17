@@ -1,3 +1,15 @@
+import os
+os.environ["PYOPENGL_PLATFORM"] = "osmesa"
+
+# 导入必要的库
+try:
+    import OpenGL
+    from OpenGL import osmesa
+    print("OSMesa successfully imported.")
+except ImportError as e:
+    print("Error importing OSMesa:", e)
+    raise
+
 import torch
 import pyrender
 import cv2

@@ -5,6 +5,8 @@ import cv2
 import trimesh
 import pyrender
 
+import os
+os.environ["PYOPENGL_PLATFORM"] = "osmesa"
 
 class Recorder():
     def __init__(self, save_folder, camera, visualize=False, save_vertices=False):
@@ -22,10 +24,11 @@ class Recorder():
         face_model = log_data['face_model']
         intrinsics = log_data['intrinsics']
         extrinsics = log_data['extrinsics']
-     
+    
         with torch.no_grad():
             vertices, landmarks = log_data['face_model']()
-        
+            # [82, 35709, 3]
+            
         for n, frame in enumerate(frames):
             os.makedirs(os.path.join(self.save_folder, frame), exist_ok=True)
             face_model.save('%s/params.npz' % (os.path.join(self.save_folder, frame)), batch_id=n)
@@ -39,6 +42,7 @@ class Recorder():
                     mesh_trimesh = trimesh.Trimesh(vertices=vertices[n].cpu().numpy(), faces=faces)
                     mesh = pyrender.Mesh.from_trimesh(mesh_trimesh)
 
+                    import ipdb; ipdb.set_trace()
                     self.camera.init_renderer(intrinsic=intrinsics[n, v], extrinsic=extrinsics[n, v])
                     render_image = self.camera.render(mesh)
 

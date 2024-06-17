@@ -1,3 +1,8 @@
+# import ipdb; ipdb.set_trace()
+
+import os
+os.environ["PYOPENGL_PLATFORM"] = "osmesa"
+
 import os
 import torch
 import argparse
@@ -9,8 +14,11 @@ from lib.Fitter import Fitter
 from lib.face_models import get_face_model
 from lib.Camera import Camera
 
-import os
-os.environ['PYGLET_WINDOW'] = 'dummy'
+# import os
+# os.environ['PYGLET_WINDOW'] = 'dummy'
+
+# import os
+# os.environ["PYOPENGL_PLATFORM"] = "osmesa"
 
 
 if __name__ == '__main__':

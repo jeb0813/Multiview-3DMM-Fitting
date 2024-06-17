@@ -1,13 +1,24 @@
 import os 
 import json
 
+import argparse
+
+def get_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--subject_id', type=str, default='M005')
+    return parser.parse_args()
+
+args = get_parser()
+sid=args.subject_id
+source_folder = f'/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO_single_vid/{sid}'
+emo_folders = sorted(os.listdir(source_folder))
+
+
+
 num_val = 5
 
 train = dict()
 val = dict()
-
-source_folder = '/data/chenziang/codes/Multiview-3DMM-Fitting/MEAD_MONO_single_vid/M003'
-emo_folders = sorted(os.listdir(source_folder))
 
 for emo_folder in emo_folders:
     train_emo = dict()

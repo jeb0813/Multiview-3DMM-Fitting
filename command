@@ -36,7 +36,10 @@ CUDA_VISIBLE_DEVICES=3 python face_parsing.py --config config/MEAD_M003_single_v
 
 
 对val生成的数据进行预处理
-CUDA_VISIBLE_DEVICES=2 python face_parsing_val.py 
+CUDA_VISIBLE_DEVICES=1 python face_parsing_val.py --source_folder /data/chenziang/codes/Gaussian-Head-Avatar-private/output_mead/results/reenactment/M003_25_210k
 
-CUDA_VISIBLE_DEVICES=2 python fitting_mead_single_vid.py --config config/MEAD_M003_flame.yaml
+CUDA_VISIBLE_DEVICES=2 python fitting_mead_single_vid.py --config config/MEAD_M003_25_single_vid.yaml
+
+CUDA_VISIBLE_DEVICES=0 bash autoProcess.sh M003_25
+
 
