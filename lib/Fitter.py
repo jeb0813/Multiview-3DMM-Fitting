@@ -66,8 +66,8 @@ class Fitter():
                 # 更新进度条
                 progress_bar.set_postfix(loss=loss.item())
 
-                if abs(loss.item() - prev_loss) < 1e-10 and abs(loss.item() - pprev_loss) < 1e-9:
-                # if abs(loss.item() - prev_loss) < 1e-7 and abs(loss.item() - pprev_loss) < 1e-6:
+                # if abs(loss.item() - prev_loss) < 1e-10 and abs(loss.item() - pprev_loss) < 1e-9:
+                if abs(loss.item() - prev_loss) < 1e-8 and abs(loss.item() - pprev_loss) < 1e-7:
                     break
                 else:
                     pprev_loss = prev_loss
